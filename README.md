@@ -34,7 +34,7 @@ make bootstrap && make tests
 ```
 
 ## Usage
- 
+
 In order to start using goruntime, import it to your project with:
 
 ```Go
@@ -50,7 +50,7 @@ settings, etc.  Individual files should typically contain a single key/value pai
 
 ### Components
 
-The runtime system is composed of a Loder interface and a Snapshot interface. The Snapshot holds a version of
+The runtime system is composed of a Loader interface and a Snapshot interface. The Snapshot holds a version of
 the runtime data from disk, and is used to retrieve information from that data. The Loader loads the current snapshot, and
 gets file system updates when the runtime data gets updated.
 
@@ -147,7 +147,3 @@ s.Get("more_files.file2")
 //Supposed file3 contains an integer, or you want to use a default integer if file3 does not contain one
 s.GetInteger("more_files.file3", 8)
 ```
-
-### Example of Usage
-
-Lyft's [ratelimit] service uses goruntime to load its configuration files.
