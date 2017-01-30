@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Goruntime](#gostats)
+- [Goruntime](#goruntime)
   - [Overview](#overview)
   - [Installation](#installation)
   - [Building](#building)
