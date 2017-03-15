@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/lyft/goruntime/snapshot/entry"
@@ -23,12 +24,20 @@ type RandomGenerator interface {
 
 // Implementation of RandomGenerator that uses a time seeded random generator.
 type randomGeneratorImpl struct {
+	sync.Mutex
 	random *rand.Rand
 }
 
-func (r *randomGeneratorImpl) Random() uint64 { return uint64(r.random.Int63()) }
+func (r *randomGeneratorImpl) Random() uint64 {
+	r.Lock()
+	v := uint64(r.random.Int63())
+	r.Unlock()
+	return v
+}
 
-var defaultRandomGenerator RandomGenerator = &randomGeneratorImpl{rand.New(rand.NewSource(time.Now().UnixNano()))}
+var defaultRandomGenerator RandomGenerator = &randomGeneratorImpl{
+	random: rand.New(rand.NewSource(time.Now().UnixNano())),
+}
 
 // Implementation of Snapshot for the filesystem loader.
 type Snapshot struct {
