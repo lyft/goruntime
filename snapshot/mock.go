@@ -30,8 +30,8 @@ func (m *Mock) SetDisabled(key string) *Mock {
 	return m
 }
 
-// SetEntry set the entry for `key` to `val`
-func (m *Mock) SetEntry(key string, val string) *Mock {
+// Set set the entry for `key` to `val`
+func (m *Mock) Set(key string, val string) *Mock {
 	m.Snapshot.entries[key] = entry.New(val, 0, false)
 
 	return m
@@ -45,3 +45,5 @@ func (m *Mock) FeatureEnabled(key string, defaultValue uint64) bool {
 
 	return false
 }
+
+var _ IFace = &Mock{}
