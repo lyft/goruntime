@@ -10,7 +10,7 @@ update:
 
 .PHONY: tests
 tests:
-	LOG_LEVEL=debug go test -cover -race $(shell glide nv)
+	go test -cover -race $(shell glide nv)
 
 .PHONY: docker-tests
 docker-tests:

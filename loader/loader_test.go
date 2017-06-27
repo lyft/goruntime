@@ -10,11 +10,17 @@ import (
 
 	"time"
 
+	logger "github.com/Sirupsen/logrus"
 	stats "github.com/lyft/gostats"
 	"github.com/stretchr/testify/require"
 )
 
 var nullScope = stats.NewStore(stats.NewNullSink(), false)
+
+func init() {
+	lvl, _ := logger.ParseLevel("DEBUG")
+	logger.SetLevel(lvl)
+}
 
 func makeFileInDir(assert *require.Assertions, path string, text string) {
 	err := os.MkdirAll(filepath.Dir(path), os.ModeDir|os.ModePerm)
