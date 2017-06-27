@@ -53,7 +53,6 @@ func TestRuntime(t *testing.T) {
 	makeFileInDir(assert, tempDir+"/testdir1/app/file1", "hello")
 	makeFileInDir(assert, tempDir+"/testdir1/app/dir/file2", "world")
 	makeFileInDir(assert, tempDir+"/testdir1/app/dir2/file3", "\n 34  ")
-	err = ioutil.WriteFile(tempDir+"/testdir1/app/dir2/bad_perms", []byte("blah"), 0)
 	assert.NoError(err)
 	err = os.Symlink(tempDir+"/testdir1", tempDir+"/current")
 	assert.NoError(err)
