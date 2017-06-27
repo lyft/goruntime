@@ -127,23 +127,6 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 	return nil
 }
 
-// Function checks if the runtime needs to be reloaded.
-// For Production the check is to see if runtime which is a symlink has changed
-// For devbox/onebox the check is relaxed to see if any file has been modified then reload.
-func reloadRuntime(ev fsnotify.Event, runtimePath string, is_dev bool) bool {
-	if is_dev {
-		if ev.Op&fsnotify.Write == fsnotify.Write || ev.Op&fsnotify.Create == fsnotify.Create || ev.Op&fsnotify.Chmod == fsnotify.Chmod {
-			return true
-		}
-	} else {
-		if ev.Name == runtimePath &&
-			(ev.Op&fsnotify.Write == fsnotify.Write || ev.Op&fsnotify.Create == fsnotify.Create) {
-			return true
-		}
-	}
-	return false
-}
-
 func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
 	switch ev.Op {
 	case ev.Op & fsnotify.Write:
