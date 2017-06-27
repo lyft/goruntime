@@ -125,11 +125,11 @@ func TestDevReload(t *testing.T) {
 	assert.Equal("hello", snapshot.Get("file1"))
 
 	// Mimic a runtime file change in dev
-	makeFileInDir(assert, appDir+"/file1", "hello2")
+	makeFileInDir(assert, appDir+"/file2", "hello2")
 
 	// Wait for the update
 	<-runtime_update
 
 	snapshot = loader.Snapshot()
-	assert.Equal("hello2", snapshot.Get("file1"))
+	assert.Equal("hello2", snapshot.Get("file2"))
 }
