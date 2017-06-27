@@ -144,35 +144,35 @@ func reloadRuntime(ev fsnotify.Event, runtimePath string, is_dev bool) bool {
 	return false
 }
 
-func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, opts ...string) IFace {
+func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
+	switch ev.Op {
+	case ev.Op & fsnotify.Write:
+		return Write
+	case ev.Op & fsnotify.Create:
+		return Create
+	case ev.Op & fsnotify.Chmod:
+		return Chmod
+	case ev.Op & fsnotify.Remove:
+		return Remove
+	case ev.Op & fsnotify.Rename:
+		return Rename
+	}
+	return 0
+}
+
+func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
 		logger.Warnf("no runtime configuration. using nil loader.")
 		return NewNil()
 	}
-	is_dev := false
-	watchedPath := runtimePath
-	for _, opt := range opts {
-		if opt == "development" {
-			is_dev = true
-			// Need to watch the actual subdir where the changes happen in dev
-			watchedPath = filepath.Join(runtimePath, runtimeSubdirectory)
-			logger.Infof("Running in dev environment. Watching %s", watchedPath)
-			break
-		}
-	}
+	watchedPath := refresher.WatchDirectory(runtimePath, runtimeSubdirectory)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		logger.Fatalf("unable to create runtime watcher %+v", err)
 	}
 
-	if is_dev {
-		// In dev environments watch the actual path
-		err = watcher.Add(watchedPath)
-	} else {
-		// We need to watch the directory that the symlink is in vs. the symlink itself.
-		err = watcher.Add(filepath.Dir(watchedPath))
-	}
+	err = watcher.Add(watchedPath)
 
 	if err != nil {
 		logger.Fatalf("unable to create runtime watcher %+v", err)
@@ -188,7 +188,7 @@ func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, opts
 			select {
 			case ev := <-watcher.Events:
 				logger.Debugf("Got event %s", ev)
-				if reloadRuntime(ev, runtimePath, is_dev) {
+				if refresher.ShouldRefresh(ev.Name, getFileSystemOp(ev)) {
 					newLoader.onRuntimeChanged()
 				}
 			case err := <-watcher.Errors:

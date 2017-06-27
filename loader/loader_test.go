@@ -33,7 +33,7 @@ func makeFileInDir(assert *require.Assertions, path string, text string) {
 func TestNilRuntime(t *testing.T) {
 	assert := require.New(t)
 
-	loader := New("", "", nullScope)
+	loader := New("", "", nullScope, &SymlinkRefresher{RuntimePath: ""})
 	snapshot := loader.Snapshot()
 	assert.Equal("", snapshot.Get("foo"))
 	assert.Equal(uint64(100), snapshot.GetInteger("bar", 100))
@@ -41,7 +41,7 @@ func TestNilRuntime(t *testing.T) {
 	assert.False(snapshot.FeatureEnabled("blah", 0))
 }
 
-func TestRuntime(t *testing.T) {
+func TestSymlinkRefresher(t *testing.T) {
 	assert := require.New(t)
 
 	// Setup base test directory.
@@ -57,7 +57,7 @@ func TestRuntime(t *testing.T) {
 	err = os.Symlink(tempDir+"/testdir1", tempDir+"/current")
 	assert.NoError(err)
 
-	loader := New(tempDir+"/current", "app", nullScope)
+	loader := New(tempDir+"/current", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/current"})
 	runtime_update := make(chan int)
 	loader.AddUpdateCallback(runtime_update)
 	snapshot := loader.Snapshot()
@@ -98,11 +98,11 @@ func TestRuntime(t *testing.T) {
 	assert.EqualValues([]string{"dir.file2", "dir2.file3", "file1"}, keys)
 }
 
-func TestDevReload(t *testing.T) {
+func TestDirectoryRefresher(t *testing.T) {
 	assert := require.New(t)
 
 	// Setup base test directory.
-	tempDir, err := ioutil.TempDir("", "dev_runtime_test")
+	tempDir, err := ioutil.TempDir("", "dir_runtime_test")
 	assert.NoError(err)
 	defer os.RemoveAll(tempDir)
 
@@ -110,7 +110,7 @@ func TestDevReload(t *testing.T) {
 	err = os.MkdirAll(appDir, os.ModeDir|os.ModePerm)
 	assert.NoError(err)
 
-	loader := New(tempDir, "app", nullScope, "development")
+	loader := New(tempDir, "app", nullScope, &DirectoryRefresher{})
 	runtime_update := make(chan int)
 	loader.AddUpdateCallback(runtime_update)
 	snapshot := loader.Snapshot()
@@ -123,7 +123,7 @@ func TestDevReload(t *testing.T) {
 	snapshot = loader.Snapshot()
 	assert.Equal("hello", snapshot.Get("file1"))
 
-	// Mimic a runtime file change in dev
+	// Mimic a file change in directory
 	makeFileInDir(assert, appDir+"/file2", "hello2")
 
 	// Wait for the update
