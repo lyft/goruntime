@@ -54,9 +54,9 @@ func (l *Loader) AddUpdateCallback(callback chan<- int) {
 	l.callbacks = append(l.callbacks, callback)
 }
 
-func (l *Loader) onSymLinkSwap() {
+func (l *Loader) onRuntimeChanged() {
 	targetDir := filepath.Join(l.watchPath, l.subdirectory)
-	logger.Debugf("runtime symlink swap. loading new snapshot at %s",
+	logger.Debugf("runtime changed. loading new snapshot at %s",
 		targetDir)
 
 	l.nextSnapshot = snapshot.New()
@@ -127,36 +127,69 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 	return nil
 }
 
-func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope) IFace {
+// Function checks if the runtime needs to be reloaded.
+// For Production the check is to see if runtime which is a symlink has changed
+// For devbox/onebox the check is relaxed to see if any file has been modified then reload.
+func reloadRuntime(ev fsnotify.Event, runtimePath string, is_dev bool) bool {
+	if is_dev {
+		if ev.Op&fsnotify.Write == fsnotify.Write || ev.Op&fsnotify.Create == fsnotify.Create || ev.Op&fsnotify.Chmod == fsnotify.Chmod {
+			return true
+		}
+	} else {
+		if ev.Name == runtimePath &&
+			(ev.Op&fsnotify.Write == fsnotify.Write || ev.Op&fsnotify.Create == fsnotify.Create) {
+			return true
+		}
+	}
+	return false
+}
+
+func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, opts ...string) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
 		logger.Warnf("no runtime configuration. using nil loader.")
 		return NewNil()
 	}
+	is_dev := false
+	watchedPath := runtimePath
+	for _, opt := range opts {
+		if opt == "development" {
+			is_dev = true
+			// Need to watch the actual subdir where the changes happen in dev
+			watchedPath = filepath.Join(runtimePath, runtimeSubdirectory)
+			logger.Infof("Running in dev environment. Watching %s", watchedPath)
+			break
+		}
+	}
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logger.Fatalf("unable to create runtime watcher")
+		logger.Fatalf("unable to create runtime watcher %+v", err)
 	}
 
-	// We need to watch the directory that the symlink is in vs. the symlink itself.
-	err = watcher.Add(filepath.Dir(runtimePath))
+	if is_dev {
+		// In dev environments watch the actual path
+		err = watcher.Add(watchedPath)
+	} else {
+		// We need to watch the directory that the symlink is in vs. the symlink itself.
+		err = watcher.Add(filepath.Dir(watchedPath))
+	}
 
 	if err != nil {
-		logger.Fatalf("unable to create runtime watcher")
+		logger.Fatalf("unable to create runtime watcher %+v", err)
 	}
 
 	newLoader := Loader{
 		watcher, runtimePath, runtimeSubdirectory, nil, nil, sync.RWMutex{}, nil,
 		newLoaderStats(scope)}
-	newLoader.onSymLinkSwap()
+	newLoader.onRuntimeChanged()
 
 	go func() {
 		for {
 			select {
 			case ev := <-watcher.Events:
-				if ev.Name == runtimePath &&
-					(ev.Op&fsnotify.Write == fsnotify.Write || ev.Op&fsnotify.Create == fsnotify.Create) {
-					newLoader.onSymLinkSwap()
+				logger.Debugf("Got event %s", ev)
+				if reloadRuntime(ev, runtimePath, is_dev) {
+					newLoader.onRuntimeChanged()
 				}
 			case err := <-watcher.Errors:
 				logger.Warnf("runtime watch error:", err)

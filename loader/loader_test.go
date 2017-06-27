@@ -92,3 +92,38 @@ func TestRuntime(t *testing.T) {
 	sort.Strings(keys)
 	assert.EqualValues([]string{"dir.file2", "dir2.file3", "file1"}, keys)
 }
+
+func TestDevReload(t *testing.T) {
+	assert := require.New(t)
+
+	// Setup base test directory.
+	tempDir, err := ioutil.TempDir("", "dev_runtime_test")
+	assert.NoError(err)
+	defer os.RemoveAll(tempDir)
+
+	appDir := tempDir + "/app"
+	err = os.MkdirAll(appDir, os.ModeDir|os.ModePerm)
+	assert.NoError(err)
+
+	loader := New(tempDir, "app", nullScope, "development")
+	runtime_update := make(chan int)
+	loader.AddUpdateCallback(runtime_update)
+	snapshot := loader.Snapshot()
+	assert.Equal("", snapshot.Get("file1"))
+	makeFileInDir(assert, appDir+"/file1", "hello")
+
+	// Wait for the update
+	<-runtime_update
+
+	snapshot = loader.Snapshot()
+	assert.Equal("hello", snapshot.Get("file1"))
+
+	// Mimic a runtime file change in dev
+	makeFileInDir(assert, appDir+"/file1", "hello2")
+
+	// Wait for the update
+	<-runtime_update
+
+	snapshot = loader.Snapshot()
+	assert.Equal("hello2", snapshot.Get("file1"))
+}
