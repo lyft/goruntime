@@ -4,7 +4,7 @@ type FileSystemOp int32
 
 // Filesystem operations that are monitored for changes
 const (
-	Create FileSystemOp = 1 << iota
+	Create FileSystemOp = iota
 	Write
 	Remove
 	Rename

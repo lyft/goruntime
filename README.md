@@ -54,6 +54,30 @@ The runtime system is composed of a Loader interface and a Snapshot interface. T
 the runtime data from disk, and is used to retrieve information from that data. The Loader loads the current snapshot, and
 gets file system updates when the runtime data gets updated.
 
+#### Refresher
+The Refresher [interface](https://github.com/lyft/goruntime/blob/master/loader/refresher_iface.go) is defined like this:
+
+```Go
+// A Refresher is used to determine when to refresh the runtime
+type Refresher interface {
+	// @return The directory path to watch for changes.
+	// @param runtimePath The root of the runtime path
+	// @param appDirPath Any app specific path
+	WatchDirectory(runtimePath string, appDirPath string) string
+
+	// @return If the runtime needs to be refreshed
+	// @param path The path that triggered the FileSystemOp
+	// @param The Filesystem op that happened on the directory returned from WatchDirectory
+	ShouldRefresh(path string, op FileSystemOp) bool
+}
+```
+
+The Refresher determines what directory to watch for file system changes and if there are any changes when to refresh.
+
+Two refreshers are provided out of the box
+* [Symlink Refresher](https://github.com/lyft/goruntime/blob/master/loader/symlink_refresher.go) : Watches the runtime directory as if it were a symlink and prompts a refresh if the symlink changes.
+* [Directory Refresher](https://github.com/lyft/goruntime/blob/master/loader/directory_refresher.go) : Watches the runtime directory as a regular directory and prompts a refresh if the content of that directory change (not its subdirectories). 
+
 #### Loader
 
 The Loader [interface](https://github.com/lyft/goruntime/blob/master/loader/iface.go) is defined like this:
@@ -81,7 +105,7 @@ import (
 
 // for full docs on gostats visit https://github.com/lyft/gostats
 store := stats.NewDefaultStore()
-runtime := loader.New("runtime_path", "runtime_subdirectory", store.Scope("runtime"))
+runtime := loader.New("runtime_path", "runtime_subdirectory", store.Scope("runtime"), &DirectoryRefresher{})
 ```
 
 The Loader will use filesystem events to update the filesystem snapshot it has.

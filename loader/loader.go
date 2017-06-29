@@ -140,7 +140,7 @@ func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
 	case ev.Op & fsnotify.Rename:
 		return Rename
 	}
-	return 0
+	return -1
 }
 
 func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher) IFace {
