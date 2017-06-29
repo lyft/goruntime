@@ -73,6 +73,7 @@ func (l *Loader) onRuntimeChanged() {
 	l.nextSnapshot = nil
 	for _, callback := range l.callbacks {
 		// Arbitrary integer just to wake up channel.
+		logger.Debug("Sending callback")
 		callback <- 1
 	}
 }
