@@ -122,6 +122,8 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 		logger.Debugf("runtime: adding key=%s value=%s uint=%t", key,
 			stringValue, entry.Uint64Valid)
 		l.nextSnapshot.SetEntry(key, entry)
+		logger.Debugf("runtime: added key=%s value=%s uint=%t", key,
+			stringValue, entry.Uint64Valid)
 	}
 
 	return nil

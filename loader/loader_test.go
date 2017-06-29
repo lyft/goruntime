@@ -120,6 +120,8 @@ func TestDirectoryRefresher(t *testing.T) {
 	// Wait for the update
 	<-runtime_update
 
+	time.Sleep(100 * time.Millisecond)
+
 	snapshot = loader.Snapshot()
 	assert.Equal("hello", snapshot.Get("file1"))
 
@@ -128,6 +130,8 @@ func TestDirectoryRefresher(t *testing.T) {
 
 	// Wait for the update
 	<-runtime_update
+
+	time.Sleep(100 * time.Millisecond)
 
 	snapshot = loader.Snapshot()
 	assert.Equal("hello2", snapshot.Get("file2"))
