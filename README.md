@@ -50,9 +50,10 @@ settings, etc.  Individual files should typically contain a single key/value pai
 
 ### Components
 
-The runtime system is composed of a Loader interface and a Snapshot interface. The Snapshot holds a version of
+The runtime system is composed of a Loader interface, Runtime interface and a Snapshot interface. The Snapshot holds a version of
 the runtime data from disk, and is used to retrieve information from that data. The Loader loads the current snapshot, and
-gets file system updates when the runtime data gets updated.
+gets file system updates when the runtime data gets updated. The Loader also uses the Refresher to watch the runtime directory
+and refreshes the snapshot when prompted.
 
 #### Refresher
 The Refresher [interface](https://github.com/lyft/goruntime/blob/master/loader/refresher_iface.go) is defined like this:
