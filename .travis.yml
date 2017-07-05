@@ -2,5 +2,8 @@ sudo:     required
 language: go
 go:       1.7.1
 
+services:
+  - docker
+
 install: make bootstrap
 script:  make tests

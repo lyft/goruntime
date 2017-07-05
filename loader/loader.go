@@ -54,9 +54,9 @@ func (l *Loader) AddUpdateCallback(callback chan<- int) {
 	l.callbacks = append(l.callbacks, callback)
 }
 
-func (l *Loader) onSymLinkSwap() {
+func (l *Loader) onRuntimeChanged() {
 	targetDir := filepath.Join(l.watchPath, l.subdirectory)
-	logger.Debugf("runtime symlink swap. loading new snapshot at %s",
+	logger.Debugf("runtime changed. loading new snapshot at %s",
 		targetDir)
 
 	l.nextSnapshot = snapshot.New()
@@ -127,36 +127,52 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 	return nil
 }
 
-func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope) IFace {
+func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
+	switch ev.Op {
+	case ev.Op & fsnotify.Write:
+		return Write
+	case ev.Op & fsnotify.Create:
+		return Create
+	case ev.Op & fsnotify.Chmod:
+		return Chmod
+	case ev.Op & fsnotify.Remove:
+		return Remove
+	case ev.Op & fsnotify.Rename:
+		return Rename
+	}
+	return -1
+}
+
+func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
 		logger.Warnf("no runtime configuration. using nil loader.")
 		return NewNil()
 	}
+	watchedPath := refresher.WatchDirectory(runtimePath, runtimeSubdirectory)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logger.Fatalf("unable to create runtime watcher")
+		logger.Fatalf("unable to create runtime watcher %+v", err)
 	}
 
-	// We need to watch the directory that the symlink is in vs. the symlink itself.
-	err = watcher.Add(filepath.Dir(runtimePath))
+	err = watcher.Add(watchedPath)
 
 	if err != nil {
-		logger.Fatalf("unable to create runtime watcher")
+		logger.Fatalf("unable to create runtime watcher %+v", err)
 	}
 
 	newLoader := Loader{
 		watcher, runtimePath, runtimeSubdirectory, nil, nil, sync.RWMutex{}, nil,
 		newLoaderStats(scope)}
-	newLoader.onSymLinkSwap()
+	newLoader.onRuntimeChanged()
 
 	go func() {
 		for {
 			select {
 			case ev := <-watcher.Events:
-				if ev.Name == runtimePath &&
-					(ev.Op&fsnotify.Write == fsnotify.Write || ev.Op&fsnotify.Create == fsnotify.Create) {
-					newLoader.onSymLinkSwap()
+				logger.Debugf("Got event %s", ev)
+				if refresher.ShouldRefresh(ev.Name, getFileSystemOp(ev)) {
+					newLoader.onRuntimeChanged()
 				}
 			case err := <-watcher.Errors:
 				logger.Warnf("runtime watch error:", err)
