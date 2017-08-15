@@ -15,6 +15,10 @@ func (n *Nil) FeatureEnabled(key string, defaultValue uint64) bool {
 	return defaultRandomGenerator.Random()%100 < min(defaultValue, 100)
 }
 
+func (n *Nil) FeatureEnabledForID(key string, id uint64, defaultValue bool) bool {
+	return defaultValue
+}
+
 func (n *Nil) Get(key string) string { return "" }
 
 func (n *Nil) GetInteger(key string, defaultValue uint64) uint64 {
