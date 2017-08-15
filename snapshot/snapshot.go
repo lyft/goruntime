@@ -60,16 +60,14 @@ func (s *Snapshot) FeatureEnabled(key string, defaultValue uint64) bool {
 
 // FeatureEnabledForID checks that the crc32 of the id and key's byte value falls within the mod of
 // the 0-100 value for the given feature. Use this method for "sticky" features
-func (s *Snapshot) FeatureEnabledForID(key string, id uint64) bool {
+func (s *Snapshot) FeatureEnabledForID(key string, id uint64, defaultValue bool) bool {
 	if e, ok := s.Entries()[key]; ok {
 		if e.Uint64Valid {
 			return withinPercentile(id, uint32(e.Uint64Value), key)
 		}
-
-		return false
 	}
 
-	return false
+	return defaultValue
 }
 
 func (s *Snapshot) Get(key string) string {
