@@ -17,6 +17,12 @@ type IFace interface {
 	// @return true if the feature is enabled.
 	FeatureEnabled(key string, defaultValue uint64) bool
 
+	// FeatureEnabledForID checks that the crc32 of the id and key's byte value falls within the mod of
+	// the 0-100 value for the given feature. Use this method for "sticky" features
+	// @param key supplies the feature key to lookup.
+	// @param id supplies the ID to use in the CRC check.
+	FeatureEnabledForID(key string, id uint64) bool
+
 	// Fetch raw runtime data based on key.
 	// @param key supplies the key to fetch.
 	// @return const std::string& the value or empty string if the key does not exist.
