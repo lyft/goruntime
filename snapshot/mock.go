@@ -37,6 +37,13 @@ func (m *Mock) Set(key string, val string) *Mock {
 	return m
 }
 
+// SetUInt64 set the entry for `key` to `val` as a uint64
+func (m *Mock) SetUInt64(key string, val uint64) *Mock {
+	m.Snapshot.entries[key] = entry.New("", val, true)
+
+	return m
+}
+
 // FeatureEnabled overrides the internal `Snapshot`s `FeatureEnabled`
 func (m *Mock) FeatureEnabled(key string, defaultValue uint64) bool {
 	if e, ok := m.Snapshot.entries[key]; ok {
