@@ -26,18 +26,25 @@ func TestSnapshot_FeatureEnabledForID(t *testing.T) {
 	key := "test"
 	ss := NewMock()
 	ss.SetUInt64(key, 100)
-	assert.True(t, ss.FeatureEnabledForID(key, 1, true))
+	assert.True(t, ss.FeatureEnabledForID(key, 1, 100))
 
 	ss.SetUInt64(key, 0)
-	assert.False(t, ss.FeatureEnabledForID(key, 1, true))
+	assert.False(t, ss.FeatureEnabledForID(key, 1, 100))
 
 	enabled := 0
 	for i := 1; i < 101; i++ {
 		ss.SetUInt64(key, uint64(i))
-		if ss.FeatureEnabledForID(key, uint64(i), true) {
+		if ss.FeatureEnabledForID(key, uint64(i), 100) {
 			enabled++
 		}
 	}
 
 	assert.Equal(t, 47, enabled)
+}
+
+func TestSnapshot_FeatureEnabledForIDDisabled(t *testing.T) {
+	key := "test"
+	ss := NewMock()
+	assert.True(t, ss.FeatureEnabledForID(key, 1, 100))
+	assert.False(t, ss.FeatureEnabledForID(key, 1, 0))
 }
