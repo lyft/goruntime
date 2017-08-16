@@ -60,29 +60,29 @@ func (s *Snapshot) FeatureEnabled(key string, defaultValue uint64) bool {
 
 // FeatureEnabledForID checks that the crc32 of the id and key's byte value falls within the mod of
 // the 0-100 value for the given feature. Use this method for "sticky" features
-func (s *Snapshot) FeatureEnabledForID(key string, id uint64, defaultValue bool) bool {
+func (s *Snapshot) FeatureEnabledForID(key string, id uint64, defaultPercentage uint32) bool {
 	if e, ok := s.Entries()[key]; ok {
 		if e.Uint64Valid {
-			return withinPercentile(id, uint32(e.Uint64Value), key)
+			return enabled(id, uint32(e.Uint64Value), key)
 		}
 	}
 
-	return defaultValue
+	return enabled(id, defaultPercentage, key)
 }
 
 func (s *Snapshot) Get(key string) string {
-	entry, ok := s.entries[key]
+	e, ok := s.entries[key]
 	if ok {
-		return entry.StringValue
+		return e.StringValue
 	} else {
 		return ""
 	}
 }
 
 func (s *Snapshot) GetInteger(key string, defaultValue uint64) uint64 {
-	entry, ok := s.entries[key]
-	if ok && entry.Uint64Valid {
-		return entry.Uint64Value
+	e, ok := s.entries[key]
+	if ok && e.Uint64Valid {
+		return e.Uint64Value
 	} else {
 		return defaultValue
 	}
@@ -104,12 +104,10 @@ func (s *Snapshot) SetEntry(key string, e *entry.Entry) {
 	s.entries[key] = e
 }
 
-func withinPercentile(id uint64, percentage uint32, feature string) bool {
+func enabled(id uint64, percentage uint32, feature string) bool {
 	uid := crc(id, feature)
 
-	m := uid % 100
-
-	return m < percentage
+	return uid%100 < percentage
 }
 
 func crc(id uint64, feature string) uint32 {

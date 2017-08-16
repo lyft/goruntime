@@ -22,8 +22,8 @@ type IFace interface {
 	// @param key supplies the feature key to lookup.
 	// @param id supplies the ID to use in the CRC check.
 	// @param defaultValue supplies the default value that will be used if either the feature key
-	//        does not exist or it is not a bool.
-	FeatureEnabledForID(key string, id uint64, defaultValue bool) bool
+	//        does not exist or it is not a valid percentage.
+	FeatureEnabledForID(key string, id uint64, defaultPercentage uint32) bool
 
 	// Fetch raw runtime data based on key.
 	// @param key supplies the key to fetch.
