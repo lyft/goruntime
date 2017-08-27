@@ -90,7 +90,7 @@ func (s *Snapshot) GetInteger(key string, defaultValue uint64) uint64 {
 
 func (s *Snapshot) Keys() []string {
 	ret := []string{}
-	for key, _ := range s.entries {
+	for key := range s.entries {
 		ret = append(ret, key)
 	}
 	return ret
