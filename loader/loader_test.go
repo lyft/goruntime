@@ -33,8 +33,8 @@ func makeFileInDir(assert *require.Assertions, path string, text string) {
 func TestNilRuntime(t *testing.T) {
 	assert := require.New(t)
 
-	loader := New("", "", nullScope, &SymlinkRefresher{RuntimePath: ""})
-	snapshot := loader.Snapshot()
+	testLoader := New("", "", nullScope, &SymlinkRefresher{RuntimePath: ""})
+	snapshot := testLoader.Snapshot()
 	assert.Equal("", snapshot.Get("foo"))
 	assert.Equal(uint64(100), snapshot.GetInteger("bar", 100))
 	assert.True(snapshot.FeatureEnabled("baz", 100))
@@ -57,10 +57,10 @@ func TestSymlinkRefresher(t *testing.T) {
 	err = os.Symlink(tempDir+"/testdir1", tempDir+"/current")
 	assert.NoError(err)
 
-	loader := New(tempDir+"/current", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/current"})
-	runtime_update := make(chan int)
-	loader.AddUpdateCallback(runtime_update)
-	snapshot := loader.Snapshot()
+	testLoader := New(tempDir+"/current", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/current"})
+	runtimeUpdate := make(chan int)
+	testLoader.AddUpdateCallback(runtimeUpdate)
+	snapshot := testLoader.Snapshot()
 	assert.Equal("", snapshot.Get("foo"))
 	assert.Equal(uint64(5), snapshot.GetInteger("foo", 5))
 	assert.Equal("hello", snapshot.Get("file1"))
@@ -82,11 +82,11 @@ func TestSymlinkRefresher(t *testing.T) {
 	err = os.Rename(tempDir+"/current_new", tempDir+"/current")
 	assert.NoError(err)
 
-	<-runtime_update
+	<-runtimeUpdate
 
 	time.Sleep(100 * time.Millisecond)
 
-	snapshot = loader.Snapshot()
+	snapshot = testLoader.Snapshot()
 	assert.Equal("", snapshot.Get("foo"))
 	assert.Equal("hello2", snapshot.Get("file1"))
 	assert.Equal("world2", snapshot.Get("dir.file2"))
@@ -110,25 +110,25 @@ func TestDirectoryRefresher(t *testing.T) {
 	err = os.MkdirAll(appDir, os.ModeDir|os.ModePerm)
 	assert.NoError(err)
 
-	loader := New(tempDir, "app", nullScope, &DirectoryRefresher{})
-	runtime_update := make(chan int)
-	loader.AddUpdateCallback(runtime_update)
-	snapshot := loader.Snapshot()
+	testLoader := New(tempDir, "app", nullScope, &DirectoryRefresher{})
+	runtimeUpdate := make(chan int)
+	testLoader.AddUpdateCallback(runtimeUpdate)
+	snapshot := testLoader.Snapshot()
 	assert.Equal("", snapshot.Get("file1"))
 	makeFileInDir(assert, appDir+"/file1", "hello")
 
 	// Wait for the update
-	<-runtime_update
+	<-runtimeUpdate
 
-	snapshot = loader.Snapshot()
+	snapshot = testLoader.Snapshot()
 	assert.Equal("hello", snapshot.Get("file1"))
 
 	// Mimic a file change in directory
 	makeFileInDir(assert, appDir+"/file2", "hello2")
 
 	// Wait for the update
-	<-runtime_update
+	<-runtimeUpdate
 
-	snapshot = loader.Snapshot()
+	snapshot = testLoader.Snapshot()
 	assert.Equal("hello2", snapshot.Get("file2"))
 }

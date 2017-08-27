@@ -13,9 +13,8 @@ import (
 func min(lhs uint64, rhs uint64) uint64 {
 	if lhs < rhs {
 		return lhs
-	} else {
-		return rhs
 	}
+	return rhs
 }
 
 // RandomGenerator is an random number generator. Implementations should be thread safe.
@@ -74,18 +73,16 @@ func (s *Snapshot) Get(key string) string {
 	e, ok := s.entries[key]
 	if ok {
 		return e.StringValue
-	} else {
-		return ""
 	}
+	return ""
 }
 
 func (s *Snapshot) GetInteger(key string, defaultValue uint64) uint64 {
 	e, ok := s.entries[key]
 	if ok && e.Uint64Valid {
 		return e.Uint64Value
-	} else {
-		return defaultValue
 	}
+	return defaultValue
 }
 
 func (s *Snapshot) Keys() []string {
