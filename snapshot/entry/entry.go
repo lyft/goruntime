@@ -1,6 +1,6 @@
 package entry
 
-// An individual snapshot entry. Optimized for integers by pre-converting them if possible.
+// Entry represents an individual snapshot entry. Optimized for integers by pre-converting them if possible.
 type Entry struct {
 	StringValue string
 	Uint64Value uint64

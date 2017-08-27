@@ -2,7 +2,7 @@ package loader
 
 import "github.com/lyft/goruntime/snapshot"
 
-// Implementation of Loader with no backing store.
+// Nil is an implementation of Loader with no backing store.
 type Nil struct {
 	snapshot *snapshot.Nil
 }

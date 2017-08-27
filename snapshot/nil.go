@@ -2,7 +2,7 @@ package snapshot
 
 import "github.com/lyft/goruntime/snapshot/entry"
 
-// Implementation of Snapshot for the nilLoaderImpl.
+// Nil is an implementation of Snapshot for the nilLoaderImpl.
 type Nil struct{}
 
 func NewNil() (s *Nil) {

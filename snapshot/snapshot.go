@@ -18,7 +18,7 @@ func min(lhs uint64, rhs uint64) uint64 {
 	}
 }
 
-// Random number generator. Implementations should be thread safe.
+// RandomGenerator is an random number generator. Implementations should be thread safe.
 type RandomGenerator interface {
 	// @return uint64 a new random number.
 	Random() uint64
@@ -41,7 +41,7 @@ var defaultRandomGenerator RandomGenerator = &randomGeneratorImpl{
 	random: rand.New(rand.NewSource(time.Now().UnixNano())),
 }
 
-// Implementation of Snapshot for the filesystem loader.
+// Snapshot is an implementation of Snapshot for the filesystem loader.
 type Snapshot struct {
 	entries map[string]*entry.Entry
 }
