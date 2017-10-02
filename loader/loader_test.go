@@ -10,8 +10,8 @@ import (
 
 	"time"
 
-	logger "github.com/Sirupsen/logrus"
 	stats "github.com/lyft/gostats"
+	logger "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
