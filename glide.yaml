@@ -1,8 +1,9 @@
 package: github.com/lyft/goruntime
 import:
-- package: github.com/Sirupsen/logrus
-  version: ~0.11.0
+- package: github.com/sirupsen/logrus
+  version: ^1.0
 - package: github.com/lyft/gostats
+  version: ^0.2.2
 - package: github.com/fsnotify/fsnotify
   version: v1.4.2
 testImport:

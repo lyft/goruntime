@@ -1,18 +1,23 @@
-hash: 4e2d53ee161867a15716f47cb76ec797cc0f0c15ba79510c27e63c91375ef05f
-updated: 2017-01-26T12:08:31.426594378-08:00
+hash: 28990e3c8bd5a4804090ba537d5d6cd6fd66e9f7226cd984b1f680afa3acb95f
+updated: 2017-10-02T13:37:23.975037508-07:00
 imports:
 - name: github.com/fsnotify/fsnotify
   version: 629574ca2a5df945712d3079857300b5e4da0236
 - name: github.com/kelseyhightower/envconfig
-  version: ac12b1f15efba734211a556d8b125110dc538016
+  version: 462fda1f11d8cad3660e52737b8beefd27acfb3f
 - name: github.com/lyft/gostats
-  version: 509f53e8baca66e1c850cb48e88f59b26e741969
-- name: github.com/Sirupsen/logrus
-  version: d26492970760ca5d33129d2d799e34be5c4782eb
+  version: c08ad4c8e56d059c6215356a6d9cb8d7cea39a0d
+- name: github.com/sirupsen/logrus
+  version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
+- name: golang.org/x/crypto
+  version: 9419663f5a44be8b34ca85f08abc5fe1be11f8a3
+  subpackages:
+  - ssh/terminal
 - name: golang.org/x/sys
-  version: 9bb9f0998d48b31547d975974935ae9b48c7a03c
+  version: 314a259e304ff91bd6985da2a7149bbf91237993
   subpackages:
   - unix
+  - windows
 testImports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9

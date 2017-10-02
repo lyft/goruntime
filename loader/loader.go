@@ -13,7 +13,7 @@ import (
 	"github.com/lyft/goruntime/snapshot/entry"
 	stats "github.com/lyft/gostats"
 
-	logger "github.com/Sirupsen/logrus"
+	logger "github.com/sirupsen/logrus"
 )
 
 type loaderStats struct {
