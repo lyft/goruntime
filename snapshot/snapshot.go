@@ -55,7 +55,13 @@ func New() (s *Snapshot) {
 }
 
 func (s *Snapshot) FeatureEnabled(key string, defaultValue uint64) bool {
-	return defaultRandomGenerator.Random()%100 < min(s.GetInteger(key, defaultValue), 100)
+	featureValue := s.GetInteger(key, defaultValue)
+	if featureValue == 100 {
+		return true
+	} else if featureValue == 0 {
+		return false
+	}
+	return defaultRandomGenerator.Random()%100 < min(featureValue, 100)
 }
 
 // FeatureEnabledForID checks that the crc32 of the id and key's byte value falls within the mod of
