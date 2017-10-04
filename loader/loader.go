@@ -30,7 +30,7 @@ func newLoaderStats(scope stats.Scope) loaderStats {
 	return ret
 }
 
-// Implementation of Loader that watches a symlink and reads from the filesystem.
+// Loader is an implementation of Loader that watches a symlink and reads from the filesystem.
 type Loader struct {
 	watcher         *fsnotify.Watcher
 	watchPath       string
