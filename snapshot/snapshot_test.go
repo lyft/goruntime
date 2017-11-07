@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lyft/goruntime/snapshot/entry"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,4 +48,14 @@ func TestSnapshot_FeatureEnabledForIDDisabled(t *testing.T) {
 	ss := NewMock()
 	assert.True(t, ss.FeatureEnabledForID(key, 1, 100))
 	assert.False(t, ss.FeatureEnabledForID(key, 1, 0))
+}
+
+func TestSnapshot_GetModified(t *testing.T) {
+	ss := NewMock()
+
+	assert.True(t, ss.GetModified("foo").IsZero())
+
+	now := time.Now()
+	ss.entries["foo"] = &entry.Entry{Modified: now}
+	assert.Equal(t, now, ss.GetModified("foo"))
 }

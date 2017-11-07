@@ -111,17 +111,22 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 
 		key = strings.Replace(key, "/", ".", -1)
 		stringValue := string(contents)
-		entry := entry.New(stringValue, 0, false)
+		e := &entry.Entry{
+			StringValue: stringValue,
+			Uint64Value: 0,
+			Uint64Valid: false,
+			Modified:    info.ModTime(),
+		}
 
 		uint64Value, err := strconv.ParseUint(strings.TrimSpace(stringValue), 10, 64)
 		if err == nil {
-			entry.Uint64Value = uint64Value
-			entry.Uint64Valid = true
+			e.Uint64Value = uint64Value
+			e.Uint64Valid = true
 		}
 
 		logger.Debugf("runtime: adding key=%s value=%s uint=%t", key,
-			stringValue, entry.Uint64Valid)
-		l.nextSnapshot.SetEntry(key, entry)
+			stringValue, e.Uint64Valid)
+		l.nextSnapshot.SetEntry(key, e)
 	}
 
 	return nil

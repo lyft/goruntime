@@ -88,6 +88,16 @@ func (s *Snapshot) GetInteger(key string, defaultValue uint64) uint64 {
 	}
 }
 
+// GetModified returns the last modified timestamp for key. If key does not
+// exist, the zero value for time.Time is returned.
+func (s *Snapshot) GetModified(key string) time.Time {
+	if e, ok := s.entries[key]; ok {
+		return e.Modified
+	}
+
+	return time.Time{}
+}
+
 func (s *Snapshot) Keys() []string {
 	ret := []string{}
 	for key, _ := range s.entries {
