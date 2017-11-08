@@ -69,6 +69,9 @@ func TestSymlinkRefresher(t *testing.T) {
 	assert.Equal(uint64(7), snapshot.GetInteger("dir.file2", 7))
 	assert.Equal(uint64(34), snapshot.GetInteger("dir2.file3", 100))
 
+	info, _ := os.Stat(tempDir + "/testdir1/app/file1")
+	assert.Equal(info.ModTime(), snapshot.GetModified("file1"))
+
 	keys := snapshot.Keys()
 	sort.Strings(keys)
 	assert.EqualValues([]string{"dir.file2", "dir2.file3", "file1"}, keys)

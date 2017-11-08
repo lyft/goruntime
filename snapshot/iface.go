@@ -1,6 +1,10 @@
 package snapshot
 
-import "github.com/lyft/goruntime/snapshot/entry"
+import (
+	"time"
+
+	"github.com/lyft/goruntime/snapshot/entry"
+)
 
 // Snapshot provides the currently loaded set of runtime values.
 type IFace interface {
@@ -36,6 +40,10 @@ type IFace interface {
 	//        contain an integer.
 	// @return uint64 the runtime value or the default value.
 	GetInteger(key string, defaultValue uint64) uint64
+
+	// GetModified returns the last modified timestamp for key. If key does not
+	// exist, the zero value for time.Time is returned.
+	GetModified(key string) time.Time
 
 	// Fetch all keys inside the snapshot.
 	// @return []string all of the keys.

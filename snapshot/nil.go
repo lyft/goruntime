@@ -1,6 +1,10 @@
 package snapshot
 
-import "github.com/lyft/goruntime/snapshot/entry"
+import (
+	"time"
+
+	"github.com/lyft/goruntime/snapshot/entry"
+)
 
 // Implementation of Snapshot for the nilLoaderImpl.
 type Nil struct{}
@@ -21,9 +25,9 @@ func (n *Nil) FeatureEnabledForID(key string, id uint64, defaultPercentage uint3
 
 func (n *Nil) Get(key string) string { return "" }
 
-func (n *Nil) GetInteger(key string, defaultValue uint64) uint64 {
-	return defaultValue
-}
+func (n *Nil) GetInteger(key string, defaultValue uint64) uint64 { return defaultValue }
+
+func (n *Nil) GetModified(key string) time.Time { return time.Time{} }
 
 func (n *Nil) Keys() []string {
 	return []string{}
