@@ -40,6 +40,7 @@ type Loader struct {
 	updateLock      sync.RWMutex
 	callbacks       []chan<- int
 	stats           loaderStats
+	ignoreDotfiles  bool
 }
 
 func (l *Loader) Snapshot() snapshot.IFace {
@@ -90,7 +91,15 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 	}
 
 	logger.Debugf("runtime: processing %s", path)
+	if l.ignoreDotfiles && info.IsDir() && strings.HasPrefix(info.Name(), ".") {
+		return filepath.SkipDir
+	}
+
 	if !info.IsDir() {
+		if l.ignoreDotfiles && strings.HasPrefix(info.Name(), ".") {
+			return nil
+		}
+
 		contents, err := ioutil.ReadFile(path)
 
 		if err != nil {
@@ -148,7 +157,7 @@ func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
 	return -1
 }
 
-func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher) IFace {
+func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, ignoreDotfiles bool) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
 		logger.Warnf("no runtime configuration. using nil loader.")
 		return NewNil()
@@ -168,7 +177,7 @@ func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refr
 
 	newLoader := Loader{
 		watcher, runtimePath, runtimeSubdirectory, nil, nil, sync.RWMutex{}, nil,
-		newLoaderStats(scope)}
+		newLoaderStats(scope), ignoreDotfiles}
 	newLoader.onRuntimeChanged()
 
 	go func() {
