@@ -38,7 +38,7 @@ make bootstrap && make tests
 In order to start using goruntime, import it to your project with:
 
 ```Go
-import "github.com/lyft/runtime"
+import "github.com/lyft/goruntime"
 ```
 
 ### Intended Use
