@@ -157,6 +157,11 @@ func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
 	return -1
 }
 
+const (
+	AllowDotFiles  = false
+	IgnoreDotFiles = true
+)
+
 func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, ignoreDotfiles bool) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
 		logger.Warnf("no runtime configuration. using nil loader.")

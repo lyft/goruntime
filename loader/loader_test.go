@@ -33,7 +33,7 @@ func makeFileInDir(assert *require.Assertions, path string, text string) {
 func TestNilRuntime(t *testing.T) {
 	assert := require.New(t)
 
-	loader := New("", "", nullScope, &SymlinkRefresher{RuntimePath: ""}, false)
+	loader := New("", "", nullScope, &SymlinkRefresher{RuntimePath: ""}, AllowDotFiles)
 	snapshot := loader.Snapshot()
 	assert.Equal("", snapshot.Get("foo"))
 	assert.Equal(uint64(100), snapshot.GetInteger("bar", 100))
@@ -57,7 +57,7 @@ func TestSymlinkRefresher(t *testing.T) {
 	err = os.Symlink(tempDir+"/testdir1", tempDir+"/current")
 	assert.NoError(err)
 
-	loader := New(tempDir+"/current", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/current"}, false)
+	loader := New(tempDir+"/current", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/current"}, AllowDotFiles)
 	runtime_update := make(chan int)
 	loader.AddUpdateCallback(runtime_update)
 	snapshot := loader.Snapshot()
@@ -114,12 +114,12 @@ func TestIgnoreDotfiles(t *testing.T) {
 	makeFileInDir(assert, tempDir+"/testdir1/app/.dir/file5", ".dir")
 	assert.NoError(err)
 
-	loaderIgnoreDotfiles := New(tempDir+"/testdir1", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/testdir1"}, true)
+	loaderIgnoreDotfiles := New(tempDir+"/testdir1", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/testdir1"}, IgnoreDotFiles)
 	snapshot := loaderIgnoreDotfiles.Snapshot()
 	assert.Equal("", snapshot.Get("dir3..file4"))
 	assert.Equal("", snapshot.Get(".dir.file5"))
 
-	loaderIncludeDotfiles := New(tempDir+"/testdir1", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/testdir1"}, false)
+	loaderIncludeDotfiles := New(tempDir+"/testdir1", "app", nullScope, &SymlinkRefresher{RuntimePath: tempDir + "/testdir1"}, AllowDotFiles)
 	snapshot = loaderIncludeDotfiles.Snapshot()
 	assert.Equal(".file4", snapshot.Get("dir3..file4"))
 	assert.Equal(".dir", snapshot.Get(".dir.file5"))
@@ -137,7 +137,7 @@ func TestDirectoryRefresher(t *testing.T) {
 	err = os.MkdirAll(appDir, os.ModeDir|os.ModePerm)
 	assert.NoError(err)
 
-	loader := New(tempDir, "app", nullScope, &DirectoryRefresher{}, false)
+	loader := New(tempDir, "app", nullScope, &DirectoryRefresher{}, AllowDotFiles)
 	runtime_update := make(chan int)
 	loader.AddUpdateCallback(runtime_update)
 	snapshot := loader.Snapshot()
