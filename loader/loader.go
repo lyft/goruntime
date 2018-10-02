@@ -157,12 +157,12 @@ func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
 	return -1
 }
 
-const (
-	AllowDotFiles  = false
-	IgnoreDotFiles = true
-)
+type Option func(l *Loader)
 
-func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, ignoreDotfiles bool) IFace {
+func AllowDotFiles(loader *Loader)  { loader.ignoreDotfiles = false }
+func IgnoreDotFiles(loader *Loader) { loader.ignoreDotfiles = true }
+
+func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, opts ...Option) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
 		logger.Warnf("no runtime configuration. using nil loader.")
 		return NewNil()
@@ -181,8 +181,16 @@ func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refr
 	}
 
 	newLoader := Loader{
-		watcher, runtimePath, runtimeSubdirectory, nil, nil, sync.RWMutex{}, nil,
-		newLoaderStats(scope), ignoreDotfiles}
+		watcher:      watcher,
+		watchPath:    runtimePath,
+		subdirectory: runtimeSubdirectory,
+		stats:        newLoaderStats(scope),
+	}
+
+	for _, opt := range opts {
+		opt(&newLoader)
+	}
+
 	newLoader.onRuntimeChanged()
 
 	go func() {
