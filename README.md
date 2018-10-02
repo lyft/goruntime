@@ -106,11 +106,10 @@ import (
 
 // for full docs on gostats visit https://github.com/lyft/gostats
 store := stats.NewDefaultStore()
-runtime := loader.New("runtime_path", "runtime_subdirectory", store.Scope("runtime"), &DirectoryRefresher{}, AllowDotFiles)
+runtime := loader.New("runtime_path", "runtime_subdirectory", store.Scope("runtime"), &DirectoryRefresher{})
 ```
 
 The Loader will use filesystem events to update the filesystem snapshot it has.
-Dotfiles can be allowed by passing `AllowDotFiles` or ignored by passing `IgnoreDotFiles`.
 
 #### Snapshot
 
@@ -161,7 +160,7 @@ And the runtime loader is setup like so:
 
 ```Go
 store := stats.NewDefaultStore()
-runtime := loader.New("/runtime", "config", stats.Scope("runtime"), AllowDotFiles)
+runtime := loader.New("/runtime", "config", stats.Scope("runtime"))
 ```
 
 The values in all three files can be obtained the following way:
