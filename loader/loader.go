@@ -159,8 +159,8 @@ func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
 
 type Option func(l *Loader)
 
-func AllowDotFiles(loader *Loader)  { loader.ignoreDotfiles = false }
-func IgnoreDotFiles(loader *Loader) { loader.ignoreDotfiles = true }
+func AllowDotFiles(l *Loader)  { l.ignoreDotfiles = false }
+func IgnoreDotFiles(l *Loader) { l.ignoreDotfiles = true }
 
 func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, opts ...Option) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
