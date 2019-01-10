@@ -158,4 +158,17 @@ func TestDirectoryRefresher(t *testing.T) {
 
 	snapshot = loader.Snapshot()
 	assert.Equal("hello2", snapshot.Get("file2"))
+
+	// Write to the file
+	f, err := os.OpenFile(appDir+"/file2", os.O_RDWR, os.ModeAppend)
+	assert.NoError(err)
+	_, err = f.WriteString("hello3")
+	assert.NoError(err)
+	f.Sync()
+
+	// Wait for the update
+	<-runtime_update
+
+	snapshot = loader.Snapshot()
+	assert.Equal("hello3", snapshot.Get("file2"))
 }
