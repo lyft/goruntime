@@ -10,10 +10,10 @@ import (
 
 	"time"
 
-	"github.com/lyft/gostats"
+	stats "github.com/lyft/gostats"
 	logger "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	)
+)
 
 var nullScope = stats.NewStore(stats.NewNullSink(), false)
 
