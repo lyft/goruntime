@@ -12,8 +12,8 @@ func (d *DirectoryRefresher) WatchDirectory(runtimePath string, appDirPath strin
 }
 
 func (d *DirectoryRefresher) ShouldRefresh(path string, op FileSystemOp) bool {
-	if filepath.Base(path) == d.currDir &&
-		op == Write || op == Create || op == Chmod {
+	if filepath.Dir(path) == d.currDir &&
+		(op == Write || op == Create || op == Chmod) {
 		return true
 	}
 	return false
