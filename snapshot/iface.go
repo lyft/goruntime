@@ -11,10 +11,12 @@ type IFace interface {
 	// Test if a feature is enabled using the built in random generator. This is done by generating
 	// a random number in the range 0-99 and seeing if this number is < the value stored in the
 	// runtime key, or the default_value if the runtime key is invalid.
-	// NOTE: In the current implementation, this routine may return different results each time it
-	//       is called because a new random number is used each time. Callers should understand this
-	//       behavior and not assume that subsequent calls using the same snapshot will be
-	//       consistent.
+	//
+	// NOTE: The described behavior necessarily implies that repeated calls to this function on the same
+	//       snapshot are expected to yield different values at the rate implied by the value of the runtime
+	//       key. Callers must not assume that multiple calls using the same snapshot will be consistent in their
+	//       return value.
+	//
 	// @param key supplies the feature key to lookup.
 	// @param defaultValue supplies the default value that will be used if either the feature key
 	//        does not exist or it is not an integer.
