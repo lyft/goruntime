@@ -12,10 +12,14 @@ type IFace interface {
 	// a random number in the range 0-99 and seeing if this number is < the value stored in the
 	// runtime key, or the default_value if the runtime key is invalid.
 	//
-	// NOTE: The described behavior necessarily implies that repeated calls to this function on the same
-	//       snapshot are expected to yield different values at the rate implied by the value of the runtime
-	//       key. Callers must not assume that multiple calls using the same snapshot will be consistent in their
-	//       return value.
+	// NOTE: Although a snapshot represents a stable snapshot *of the contents in runtime*, the behavior of
+	//       this function, by design, includes performing a pseudo-random dice roll upon every call to it.
+	//       As a result, despite the fact that the underlying snapshot is not changing, the result of calling
+	//       this function repeatedly with the same parameter will *not* necessarily yield the same result.
+	//       Callers must be careful not to assume that multiple calls with result in a consistent return value.
+	//
+	//       In other words, the snapshot provides a fixed *probability* of a particular result, but the result
+	//       will still vary across calls based on that probability.
 	//
 	// @param key supplies the feature key to lookup.
 	// @param defaultValue supplies the default value that will be used if either the feature key
