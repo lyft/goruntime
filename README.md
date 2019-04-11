@@ -106,11 +106,20 @@ import (
 
 // for full docs on gostats visit https://github.com/lyft/gostats
 store := stats.NewDefaultStore()
-runtime := loader.New("runtime_path", "runtime_subdirectory", store.Scope("runtime"), &DirectoryRefresher{}, AllowDotFiles)
+runtime := loader.New("runtime_path", "runtime_subdirectory", store.Scope("runtime"), &DirectoryRefresher{}, opts ...Option)
 ```
 
 The Loader will use filesystem events to update the filesystem snapshot it has.
-Dotfiles can be allowed by passing `AllowDotFiles` or ignored by passing `IgnoreDotFiles`.
+
+##### Loader Options
+
+`New` is a variadic function that takes in arguments of type `Option`. These arguments are of the type `func(l *loader)` and
+are used to configure the `loader` being constructed. Dave Cheney wrote an [article](https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis) explaining this pattern.
+
+Currently the loader package provides the following `Option`s:
+
+1. `AllowDotFiles`: the `loader` will take into account dot files when it builds a snapshot.
+2. `IgnoreDotFiles`: the `loader` will ignore dot files when it builds a snapshot.
 
 #### Snapshot
 
