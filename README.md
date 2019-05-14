@@ -19,7 +19,7 @@
 
 ## Overview
 
-Goruntime is a Go client for Runtime application level feature flags and configuration.
+Goruntime is a Go client for Runtime application level feature flags and.
 
 ## Installation
 
