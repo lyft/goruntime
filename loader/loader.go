@@ -164,7 +164,7 @@ func IgnoreDotFiles(l *Loader) { l.ignoreDotfiles = true }
 
 func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, opts ...Option) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
-		logger.Warnf("no runtime configuration. using nil loader.")
+		logger.Warn("no runtime configuration. using nil loader.")
 		return NewNil()
 	}
 	watchedPath := refresher.WatchDirectory(runtimePath, runtimeSubdirectory)
@@ -206,7 +206,7 @@ func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refr
 					newLoader.onRuntimeChanged()
 				}
 			case err := <-watcher.Errors:
-				logger.Warnf("runtime watch error:", err)
+				logger.Warnf("runtime watch error: %s", err)
 			}
 		}
 	}()
