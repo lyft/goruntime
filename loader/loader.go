@@ -164,20 +164,24 @@ func IgnoreDotFiles(l *Loader) { l.ignoreDotfiles = true }
 
 func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, opts ...Option) IFace {
 	if runtimePath == "" || runtimeSubdirectory == "" {
-		logger.Warnf("no runtime configuration. using nil loader.")
+		logger.Warn("no runtime configuration. using nil loader.")
 		return NewNil()
 	}
 	watchedPath := refresher.WatchDirectory(runtimePath, runtimeSubdirectory)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logger.Fatalf("unable to create runtime watcher %+v", err)
+		// If this fails with EMFILE (0x18) it is likely due to
+		// inotify_init1() and fs.inotify.max_user_instances.
+		//
+		// Include the error message, type and value - this is
+		// particularly useful if the error is a syscall.Errno.
+		logger.Panicf("unable to create runtime watcher: %[1]s (%[1]T %#[1]v)\n", err)
 	}
 
 	err = watcher.Add(watchedPath)
-
 	if err != nil {
-		logger.Fatalf("unable to create runtime watcher %+v", err)
+		logger.Panicf("unable to watch file (%[1]s): %[2]s (%[2]T %#[2]v)", watchedPath, err)
 	}
 
 	newLoader := Loader{
@@ -202,7 +206,7 @@ func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refr
 					newLoader.onRuntimeChanged()
 				}
 			case err := <-watcher.Errors:
-				logger.Warnf("runtime watch error:", err)
+				logger.Warnf("runtime watch error: %s", err)
 			}
 		}
 	}()
