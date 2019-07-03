@@ -100,7 +100,7 @@ func (s *Snapshot) GetModified(key string) time.Time {
 
 func (s *Snapshot) Keys() []string {
 	ret := []string{}
-	for key, _ := range s.entries {
+	for key := range s.entries {
 		ret = append(ret, key)
 	}
 	return ret

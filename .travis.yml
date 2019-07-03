@@ -1,9 +1,11 @@
 sudo:     required
 language: go
-go:       1.7.1
+go:
+  - "1.11"
+  - "1.12"
 
-services:
-  - docker
+before_install: mkdir -p $GOPATH/bin
+install:        make install
+script:         make test
 
-install: make bootstrap
-script:  make tests
+# TODO: run 'make lint' once it passes
