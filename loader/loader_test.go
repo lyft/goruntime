@@ -23,10 +23,28 @@ func init() {
 }
 
 func makeFileInDir(assert *require.Assertions, path string, text string) {
-	err := os.MkdirAll(filepath.Dir(path), os.ModeDir|os.ModePerm)
+	tmpdir, err := ioutil.TempDir("", "")
+	assert.NoError(err)
+	defer os.RemoveAll(tmpdir)
+
+	tmpfile := filepath.Join(tmpdir, filepath.Base(path))
+
+	err = ioutil.WriteFile(tmpfile, []byte(text), os.ModePerm)
 	assert.NoError(err)
 
-	err = ioutil.WriteFile(path, []byte(text), os.ModePerm)
+	err = os.MkdirAll(filepath.Dir(path), os.ModeDir|os.ModePerm)
+	assert.NoError(err)
+
+	// We use rename since creating a file and writing to it is too slow.
+	// This is because creating the directory triggers the loader's watcher
+	// causing it to scan the directory and if we need to create + write to
+	// the file there is a chance the loader will store the contents of an
+	// empty file, which is a race.
+	//
+	// This is okay because in prod we symlink files into place so we don't
+	// need to worry about reading empty/partial files.
+	//
+	err = os.Rename(tmpfile, path)
 	assert.NoError(err)
 }
 

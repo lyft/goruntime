@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -162,10 +163,10 @@ type Option func(l *Loader)
 func AllowDotFiles(l *Loader)  { l.ignoreDotfiles = false }
 func IgnoreDotFiles(l *Loader) { l.ignoreDotfiles = true }
 
-func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, opts ...Option) IFace {
+func New2(runtimePath, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, opts ...Option) (IFace, error) {
 	if runtimePath == "" || runtimeSubdirectory == "" {
 		logger.Warn("no runtime configuration. using nil loader.")
-		return NewNil()
+		return NewNil(), nil
 	}
 	watchedPath := refresher.WatchDirectory(runtimePath, runtimeSubdirectory)
 
@@ -176,12 +177,12 @@ func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refr
 		//
 		// Include the error message, type and value - this is
 		// particularly useful if the error is a syscall.Errno.
-		logger.Panicf("unable to create runtime watcher: %[1]s (%[1]T %#[1]v)\n", err)
+		return nil, fmt.Errorf("unable to create runtime watcher: %[1]s (%[1]T %#[1]v)\n", err)
 	}
 
 	err = watcher.Add(watchedPath)
 	if err != nil {
-		logger.Panicf("unable to watch file (%[1]s): %[2]s (%[2]T %#[2]v)", watchedPath, err)
+		return nil, fmt.Errorf("unable to watch file (%[1]s): %[2]s (%[2]T %#[2]v)", watchedPath, err)
 	}
 
 	newLoader := Loader{
@@ -211,5 +212,14 @@ func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refr
 		}
 	}()
 
-	return &newLoader
+	return &newLoader, nil
+}
+
+// Deprecated: use New2 instead
+func New(runtimePath string, runtimeSubdirectory string, scope stats.Scope, refresher Refresher, opts ...Option) IFace {
+	loader, err := New2(runtimePath, runtimeSubdirectory, scope, refresher, opts...)
+	if err != nil {
+		logger.Panic(err)
+	}
+	return loader
 }
