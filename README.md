@@ -77,7 +77,7 @@ The Refresher determines what directory to watch for file system changes and if 
 
 Two refreshers are provided out of the box
 * [Symlink Refresher](https://github.com/lyft/goruntime/blob/master/loader/symlink_refresher.go) : Watches the runtime directory as if it were a symlink and prompts a refresh if the symlink changes.
-* [Directory Refresher](https://github.com/lyft/goruntime/blob/master/loader/directory_refresher.go) : Watches the runtime directory as a regular directory and prompts a refresh if the content of that directory change (not its subdirectories). 
+* [Directory Refresher](https://github.com/lyft/goruntime/blob/master/loader/directory_refresher.go) : Watches the runtime directory as a regular directory and prompts a refresh if the content of that directory change (not its subdirectories).
 
 #### Loader
 
@@ -106,14 +106,19 @@ import (
 
 // for full docs on gostats visit https://github.com/lyft/gostats
 store := stats.NewDefaultStore()
-runtime := loader.New("runtime_path", "runtime_subdirectory", store.Scope("runtime"), &DirectoryRefresher{}, opts ...Option)
+runtime, err := loader.New2("runtime_path", "runtime_subdirectory", store.Scope("runtime"), &DirectoryRefresher{}, opts ...Option)
+if err != nil {
+	// Handle error
+}
 ```
 
 The Loader will use filesystem events to update the filesystem snapshot it has.
 
+**NOTE:** The old [`loader.New(...)`](https://github.com/lyft/goruntime/blob/fd5ff74f1c4313c29aa252a14626d37f0ad15e17/loader/loader.go#L218-L225) function is deprecated in favor of [`loader.New2(...)`](https://github.com/lyft/goruntime/blob/fd5ff74f1c4313c29aa252a14626d37f0ad15e17/loader/loader.go#L166-L216) which returns an error instead of panicking.
+
 ##### Loader Options
 
-`New` is a variadic function that takes in arguments of type `Option`. These arguments are of the type `func(l *loader)` and
+`New2` is a variadic function that takes in arguments of type `Option`. These arguments are of the type `func(l *loader)` and
 are used to configure the `loader` being constructed. Dave Cheney wrote an [article](https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis) explaining this pattern.
 
 Currently the loader package provides the following `Option`s:
@@ -170,7 +175,10 @@ And the runtime loader is setup like so:
 
 ```Go
 store := stats.NewDefaultStore()
-runtime := loader.New("/runtime", "config", stats.Scope("runtime"), AllowDotFiles)
+runtime, err := loader.New2("/runtime", "config", stats.Scope("runtime"), AllowDotFiles)
+if err != nil {
+	// Handle error
+}
 ```
 
 The values in all three files can be obtained the following way:
