@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"math/rand"
 	"time"
 
 	"github.com/lyft/goruntime/snapshot/entry"
@@ -10,13 +11,15 @@ import (
 type Nil struct{}
 
 func NewNil() (s *Nil) {
-	s = &Nil{}
+	return &Nil{}
+}
 
-	return
+var nilRandom = random{
+	rr: rand.New(rand.NewSource(time.Now().UnixNano())),
 }
 
 func (n *Nil) FeatureEnabled(key string, defaultValue uint64) bool {
-	return defaultRandomGenerator.Random()%100 < min(defaultValue, 100)
+	return nilRandom.Uint64()%100 < min(defaultValue, 100)
 }
 
 func (n *Nil) FeatureEnabledForID(key string, id uint64, defaultPercentage uint32) bool {
