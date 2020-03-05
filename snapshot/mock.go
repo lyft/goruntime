@@ -44,6 +44,10 @@ func (m *Mock) SetDisabled(key string) *Mock {
 	return m
 }
 
+func (m *Mock) SetEntry(key string, ent *entry.Entry) {
+	m.Snapshot.entries[key] = ent
+}
+
 // Set set the entry for `key` to `val`
 func (m *Mock) Set(key string, val string) *Mock {
 	m.Snapshot.entries[key] = &entry.Entry{

@@ -52,14 +52,7 @@ func (l *Loader) AddUpdateCallback(callback chan<- int) {
 	l.callbacks = append(l.callbacks, callback)
 }
 
-func (l *Loader) onRuntimeChanged() {
-	targetDir := filepath.Join(l.watchPath, l.subdirectory)
-	logger.Debugf("runtime changed. loading new snapshot at %s",
-		targetDir)
-
-	l.nextSnapshot = snapshot.New()
-	filepath.Walk(targetDir, l.walkDirectoryCallback)
-
+func (l *Loader) updateSnapshot() {
 	l.stats.loadAttempts.Inc()
 	l.stats.numValues.Set(uint64(len(l.nextSnapshot.Entries())))
 	l.currentSnapshot.Store(l.nextSnapshot)
@@ -69,6 +62,15 @@ func (l *Loader) onRuntimeChanged() {
 		// Arbitrary integer just to wake up channel.
 		callback <- 1
 	}
+}
+
+func (l *Loader) onRuntimeChanged() {
+	targetDir := filepath.Join(l.watchPath, l.subdirectory)
+	logger.Debugf("runtime changed. loading new snapshot at %s", targetDir)
+
+	l.nextSnapshot = snapshot.New()
+	filepath.Walk(targetDir, l.walkDirectoryCallback)
+	l.updateSnapshot()
 }
 
 type walkError struct {
