@@ -191,14 +191,14 @@ func TestDirectoryRefresher(t *testing.T) {
 	assert.Equal("hello3", snapshot.Get("file2"))
 }
 
-func BenchmarkSnapsot(b *testing.B) {
+func BenchmarkSnapshot(b *testing.B) {
 	var ll Loader
 	for i := 0; i < b.N; i++ {
 		ll.Snapshot()
 	}
 }
 
-func BenchmarkSnapsot_Parallel(b *testing.B) {
+func BenchmarkSnapshot_Parallel(b *testing.B) {
 	ll := new(Loader)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
