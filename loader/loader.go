@@ -1,8 +1,8 @@
 package loader
 
 import (
+	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -34,13 +34,13 @@ func newLoaderStats(scope stats.Scope) loaderStats {
 // Implementation of Loader that watches a symlink and reads from the filesystem.
 type Loader struct {
 	watcher         *fsnotify.Watcher
-	watchPath       string
-	subdirectory    string
+	targetDirectory string
 	currentSnapshot snapshot.IFace
 	nextSnapshot    snapshot.IFace
 	updateLock      sync.RWMutex
 	callbacks       []chan<- int
 	stats           loaderStats
+	buf             bytes.Buffer
 	ignoreDotfiles  bool
 }
 
@@ -57,12 +57,10 @@ func (l *Loader) AddUpdateCallback(callback chan<- int) {
 }
 
 func (l *Loader) onRuntimeChanged() {
-	targetDir := filepath.Join(l.watchPath, l.subdirectory)
-	logger.Debugf("runtime changed. loading new snapshot at %s",
-		targetDir)
+	logger.Debugf("runtime changed. loading new snapshot at %s", l.targetDirectory)
 
 	l.nextSnapshot = snapshot.New()
-	filepath.Walk(targetDir, l.walkDirectoryCallback)
+	filepath.Walk(l.targetDirectory, l.walkDirectoryCallback)
 
 	// This could probably be done with an atomic pointer but the unsafe pointers the atomics
 	// take scared me so skipping for now.
@@ -71,6 +69,7 @@ func (l *Loader) onRuntimeChanged() {
 	l.updateLock.Lock()
 	l.currentSnapshot = l.nextSnapshot
 	l.updateLock.Unlock()
+	l.clearBuffer()
 
 	l.nextSnapshot = nil
 	for _, callback := range l.callbacks {
@@ -82,6 +81,8 @@ func (l *Loader) onRuntimeChanged() {
 type walkError struct {
 	err error
 }
+
+var keyReplacer = strings.NewReplacer("/", ".")
 
 func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error) error {
 	if err != nil {
@@ -101,8 +102,7 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 			return nil
 		}
 
-		contents, err := ioutil.ReadFile(path)
-
+		contents, err := l.readFile(path)
 		if err != nil {
 			l.stats.loadFailures.Inc()
 			logger.Warnf("runtime: error reading %s: %s", path, err)
@@ -110,8 +110,7 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 			return nil
 		}
 
-		key, err := filepath.Rel(filepath.Join(l.watchPath, l.subdirectory), path)
-
+		key, err := filepath.Rel(l.targetDirectory, path)
 		if err != nil {
 			l.stats.loadFailures.Inc()
 			logger.Warnf("runtime: error parsing path %s: %s", path, err)
@@ -119,28 +118,47 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 			return nil
 		}
 
-		key = strings.Replace(key, "/", ".", -1)
-		stringValue := string(contents)
+		key = keyReplacer.Replace(key)
 		e := &entry.Entry{
-			StringValue: stringValue,
+			StringValue: contents,
 			Uint64Value: 0,
 			Uint64Valid: false,
 			Modified:    info.ModTime(),
 		}
 
-		uint64Value, err := strconv.ParseUint(strings.TrimSpace(stringValue), 10, 64)
+		uint64Value, err := strconv.ParseUint(strings.TrimSpace(contents), 10, 64)
 		if err == nil {
 			e.Uint64Value = uint64Value
 			e.Uint64Valid = true
 		}
 
 		logger.Debugf("runtime: adding key=%s value=%s uint=%t", key,
-			stringValue, e.Uint64Valid)
+			contents, e.Uint64Valid)
 		l.nextSnapshot.SetEntry(key, e)
 	}
 
 	return nil
 }
+
+func (l *Loader) readFile(filename string) (string, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	l.buf.Reset()
+	l.buf.Grow(4096)
+
+	if _, err := l.buf.ReadFrom(f); err != nil {
+		return "", err
+	}
+
+	return l.buf.String(), nil
+}
+
+// clearBuffer clears the current buffer so that it may be GC'd.
+func (l *Loader) clearBuffer() { l.buf = bytes.Buffer{} }
 
 func getFileSystemOp(ev fsnotify.Event) FileSystemOp {
 	switch ev.Op {
@@ -186,10 +204,9 @@ func New2(runtimePath, runtimeSubdirectory string, scope stats.Scope, refresher 
 	}
 
 	newLoader := Loader{
-		watcher:      watcher,
-		watchPath:    runtimePath,
-		subdirectory: runtimeSubdirectory,
-		stats:        newLoaderStats(scope),
+		watcher:         watcher,
+		targetDirectory: filepath.Join(runtimePath, runtimeSubdirectory),
+		stats:           newLoaderStats(scope),
 	}
 
 	for _, opt := range opts {
