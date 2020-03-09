@@ -102,15 +102,51 @@ func MockWithUpdateChannel(changes <-chan *snapshot.Mock) MockOption {
 	})
 }
 
-func NewMock2(opts ...MockOption) *Loader {
+func NewMock(opts ...MockOption) *Loader {
 	ld := new(Loader)
 	for _, o := range opts {
 		o.apply(ld)
+	}
+	var null loaderStats
+	if ld.stats == null {
+		ld.stats = newLoaderStats(stats.NewStore(mock.NewSink(), false))
 	}
 	ld.updateSnapshot()
 	return ld
 }
 
+/*
+type mockLoaderFunc struct {
+	loaders map[string]map[string]*Loader
+}
+
+func (m *mockLoaderFunc) addLoader(path, subdir string, loader *Loader) {
+	if m.loaders == nil {
+		m.loaders = make(map[string]map[string]*Loader)
+	}
+	if m.loaders[path] == nil {
+		m.loaders[path] = make(map[string]*Loader)
+	}
+	m.loaders[path][subdir] = loader
+}
+
+func (m *mockLoaderFunc) loadLoader(path, subdir string) *Loader {
+	if sub := m.loaders[path]; sub != nil {
+		return sub[subdir]
+	}
+	return nil
+}
+
+func MockNewFunc() func(string, string, stats.Scope, Refresher, ...Option) IFace {
+	return New
+}
+
+func MockNew2Func() func(string, string, stats.Scope, Refresher, ...Option) (IFace, error) {
+	return New2
+}
+*/
+
+/*
 func NewMock(snap *snapshot.Mock, changes <-chan *snapshot.Mock) (*Loader, *mock.Sink) {
 	sink := mock.NewSink()
 	ld := &Loader{
@@ -128,3 +164,4 @@ func NewMock(snap *snapshot.Mock, changes <-chan *snapshot.Mock) (*Loader, *mock
 	}
 	return ld, nil
 }
+*/
