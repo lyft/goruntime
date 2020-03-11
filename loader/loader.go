@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
+	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/lyft/goruntime/snapshot"
@@ -33,23 +33,19 @@ func newLoaderStats(scope stats.Scope) loaderStats {
 
 // Implementation of Loader that watches a symlink and reads from the filesystem.
 type Loader struct {
+	currentSnapshot atomic.Value
 	watcher         *fsnotify.Watcher
 	watchPath       string
 	subdirectory    string
-	currentSnapshot snapshot.IFace
 	nextSnapshot    snapshot.IFace
-	updateLock      sync.RWMutex
 	callbacks       []chan<- int
 	stats           loaderStats
 	ignoreDotfiles  bool
 }
 
 func (l *Loader) Snapshot() snapshot.IFace {
-	// This could probably be done with an atomic pointer but the unsafe pointers the atomics
-	// take scared me so skipping for now.
-	l.updateLock.RLock()
-	defer l.updateLock.RUnlock()
-	return l.currentSnapshot
+	v, _ := l.currentSnapshot.Load().(snapshot.IFace)
+	return v
 }
 
 func (l *Loader) AddUpdateCallback(callback chan<- int) {
@@ -64,13 +60,9 @@ func (l *Loader) onRuntimeChanged() {
 	l.nextSnapshot = snapshot.New()
 	filepath.Walk(targetDir, l.walkDirectoryCallback)
 
-	// This could probably be done with an atomic pointer but the unsafe pointers the atomics
-	// take scared me so skipping for now.
 	l.stats.loadAttempts.Inc()
 	l.stats.numValues.Set(uint64(len(l.nextSnapshot.Entries())))
-	l.updateLock.Lock()
-	l.currentSnapshot = l.nextSnapshot
-	l.updateLock.Unlock()
+	l.currentSnapshot.Store(l.nextSnapshot)
 
 	l.nextSnapshot = nil
 	for _, callback := range l.callbacks {
