@@ -2,16 +2,8 @@
 SRCS := $(shell find . -type d -name 'vendor' -prune -o -name '*.go' -print)
 
 .PHONY: install
-install: glide #download dependencies (including test deps) for the package
-	glide install
-
-.PHONY: update
-update: glide #updates dependencies used by the package and installs them
-	glide update
-
-.PHONY: glide
-glide: # ensure the glide package tool is installed
-	which glide || go get github.com/Masterminds/glide
+install:
+	go mod download
 
 .PHONY: lint
 lint: #lints the package for common code smells
