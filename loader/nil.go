@@ -4,17 +4,13 @@ import "github.com/lyft/goruntime/snapshot"
 
 // Implementation of Loader with no backing store.
 type Nil struct {
-	snapshot *snapshot.Nil
+	snapshot snapshot.Nil
 }
 
-func NewNil() (n *Nil) {
-	n = &Nil{
-		snapshot: snapshot.NewNil(),
-	}
-
-	return
+func NewNil() Nil {
+	return Nil{}
 }
 
-func (n *Nil) Snapshot() snapshot.IFace { return n.snapshot }
+func (n Nil) Snapshot() snapshot.IFace { return n.snapshot }
 
-func (n *Nil) AddUpdateCallback(callback chan<- int) {}
+func (Nil) AddUpdateCallback(callback chan<- int) {}
