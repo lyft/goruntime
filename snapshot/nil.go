@@ -9,32 +9,34 @@ import (
 // Implementation of Snapshot for the nilLoaderImpl.
 type Nil struct{}
 
-func NewNil() (s *Nil) {
-	s = &Nil{}
+func NewNil() Nil { return Nil{} }
 
-	return
-}
-
-func (n *Nil) FeatureEnabled(key string, defaultValue uint64) bool {
+func (Nil) FeatureEnabled(_ string, defaultValue uint64) bool {
 	return defaultRandomGenerator.Random()%100 < min(defaultValue, 100)
 }
 
-func (n *Nil) FeatureEnabledForID(key string, id uint64, defaultPercentage uint32) bool {
+func (Nil) FeatureEnabledForID(string, uint64, uint32) bool {
 	return true
 }
 
-func (n *Nil) Get(key string) string { return "" }
+func (Nil) Get(string) string {
+	return ""
+}
 
-func (n *Nil) GetInteger(key string, defaultValue uint64) uint64 { return defaultValue }
+func (Nil) GetInteger(_ string, defaultValue uint64) uint64 {
+	return defaultValue
+}
 
-func (n *Nil) GetModified(key string) time.Time { return time.Time{} }
+func (Nil) GetModified(string) time.Time {
+	return time.Time{}
+}
 
-func (n *Nil) Keys() []string {
+func (Nil) Keys() []string {
 	return []string{}
 }
 
-func (n *Nil) Entries() map[string]*entry.Entry {
-	return make(map[string]*entry.Entry)
+func (Nil) Entries() map[string]*entry.Entry {
+	return map[string]*entry.Entry{}
 }
 
-func (n *Nil) SetEntry(string, *entry.Entry) {}
+func (Nil) SetEntry(string, *entry.Entry) {}
