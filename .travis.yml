@@ -5,6 +5,9 @@ go:
   - "1.12"
   - "1.13"
 
+env:
+  - GO111MODULE=on
+
 before_install: mkdir -p $GOPATH/bin
 install:        make install
 script:         make test
