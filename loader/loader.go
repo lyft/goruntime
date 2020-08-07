@@ -54,7 +54,7 @@ func (l *Loader) AddUpdateCallback(callback chan<- int) {
 
 func (l *Loader) onRuntimeChanged() {
 	targetDir := filepath.Join(l.watchPath, l.subdirectory)
-	logger.Debugf("runtime changed. loading new snapshot at %s",
+	logger.Tracef("runtime changed. loading new snapshot at %s",
 		targetDir)
 
 	l.nextSnapshot = snapshot.New()
@@ -83,7 +83,7 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 		return nil
 	}
 
-	logger.Debugf("runtime: processing %s", path)
+	logger.Tracef("runtime: processing %s", path)
 	if l.ignoreDotfiles && info.IsDir() && strings.HasPrefix(info.Name(), ".") {
 		return filepath.SkipDir
 	}
@@ -126,7 +126,7 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 			e.Uint64Valid = true
 		}
 
-		logger.Debugf("runtime: adding key=%s value=%s uint=%t", key,
+		logger.Tracef("runtime: adding key=%s value=%s uint=%t", key,
 			stringValue, e.Uint64Valid)
 		l.nextSnapshot.SetEntry(key, e)
 	}
