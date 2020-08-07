@@ -83,7 +83,6 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 		return nil
 	}
 
-	logger.Tracef("runtime: processing %s", path)
 	if l.ignoreDotfiles && info.IsDir() && strings.HasPrefix(info.Name(), ".") {
 		return filepath.SkipDir
 	}
@@ -126,7 +125,6 @@ func (l *Loader) walkDirectoryCallback(path string, info os.FileInfo, err error)
 			e.Uint64Valid = true
 		}
 
-		logger.Tracef("runtime: adding key=%s value=%s uint=%t", key,
 			stringValue, e.Uint64Valid)
 		l.nextSnapshot.SetEntry(key, e)
 	}
@@ -194,7 +192,6 @@ func New2(runtimePath, runtimeSubdirectory string, scope stats.Scope, refresher 
 		for {
 			select {
 			case ev := <-watcher.Events:
-				logger.Debugf("Got event %s", ev)
 				if refresher.ShouldRefresh(ev.Name, getFileSystemOp(ev)) {
 					newLoader.onRuntimeChanged()
 				}
