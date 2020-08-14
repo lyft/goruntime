@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
@@ -31,6 +32,53 @@ func newLoaderStats(scope stats.Scope) loaderStats {
 	return ret
 }
 
+type callbacks struct {
+	mu  sync.Mutex
+	cbs []chan<- struct{}
+}
+
+func notifyCallback(notify <-chan struct{}, callback chan<- int) {
+	for range notify {
+		callback <- 1 // potentially blocking send
+	}
+}
+
+func (c *callbacks) Add(callback chan<- int) {
+	//
+	// We cannot rely on sends to the user provided callback to not block and
+	// we guarantee that the callback will be signaled if there is a runtime
+	// change.
+	//
+	// The issue is that if the user provided callback blocks, we deadlock.
+	//
+	// To handle this we use our own buffered channel and a separate goroutine
+	// to signal the callback. If the callback blocks it may not be signaled
+	// for every update, but it will be signaled at least once. This is close
+	// enough to the original API contract to warrant the change and prevent
+	// deadlocks.
+	//
+	notify := make(chan struct{}, 1)
+	c.mu.Lock()
+	c.cbs = append(c.cbs, notify)
+	c.mu.Unlock()
+	go notifyCallback(notify, callback)
+}
+
+// Signal all callback channels without blocking.
+func (c *callbacks) Signal() {
+	c.mu.Lock()
+	for _, ch := range c.cbs {
+		select {
+		case ch <- struct{}{}:
+			// The callback will be signaled (at some point).
+		default:
+			// We're still waiting for a previous signal to be sent, dropping
+			// this signal.
+		}
+	}
+	c.mu.Unlock()
+}
+
 // Implementation of Loader that watches a symlink and reads from the filesystem.
 type Loader struct {
 	currentSnapshot atomic.Value
@@ -38,7 +86,8 @@ type Loader struct {
 	watchPath       string
 	subdirectory    string
 	nextSnapshot    snapshot.IFace
-	callbacks       []chan<- int
+	callbacks       callbacks
+	mu              sync.Mutex
 	stats           loaderStats
 	ignoreDotfiles  bool
 }
@@ -49,7 +98,10 @@ func (l *Loader) Snapshot() snapshot.IFace {
 }
 
 func (l *Loader) AddUpdateCallback(callback chan<- int) {
-	l.callbacks = append(l.callbacks, callback)
+	if callback == nil {
+		panic("goruntime/loader: nil callback")
+	}
+	l.callbacks.Add(callback)
 }
 
 func (l *Loader) onRuntimeChanged() {
@@ -63,10 +115,7 @@ func (l *Loader) onRuntimeChanged() {
 	l.currentSnapshot.Store(l.nextSnapshot)
 
 	l.nextSnapshot = nil
-	for _, callback := range l.callbacks {
-		// Arbitrary integer just to wake up channel.
-		callback <- 1
-	}
+	l.callbacks.Signal()
 }
 
 type walkError struct {
