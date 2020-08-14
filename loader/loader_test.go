@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"sort"
@@ -189,6 +191,147 @@ func TestDirectoryRefresher(t *testing.T) {
 
 	snapshot = loader.Snapshot()
 	assert.Equal("hello3", snapshot.Get("file2"))
+}
+
+func TestOnRuntimeChanged(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "goruntime-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tmpdir); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	dir, base := filepath.Split(tmpdir)
+	ll := Loader{
+		watchPath:    dir,
+		subdirectory: base,
+		stats:        newLoaderStats(stats.NewStore(stats.NewNullSink(), false)),
+	}
+
+	const Timeout = time.Second * 3
+
+	t.Run("Nil", func(t *testing.T) {
+		defer func() {
+			if e := recover(); e == nil {
+				t.Fatal("expected panic")
+			}
+		}()
+		ll.AddUpdateCallback(nil)
+	})
+
+	t.Run("One", func(t *testing.T) {
+		cb := make(chan int, 1)
+		ll.AddUpdateCallback(cb)
+		go ll.onRuntimeChanged()
+		select {
+		case i := <-cb:
+			if i != 1 {
+				t.Errorf("Callback: got: %d want: %d", i, 1)
+			}
+		case <-time.After(Timeout):
+			t.Fatalf("Time out after: %s", Timeout)
+		}
+	})
+
+	t.Run("Blocking", func(t *testing.T) {
+		done := make(chan struct{})
+		cb := make(chan int)
+		ll.AddUpdateCallback(cb)
+		go func() {
+			ll.onRuntimeChanged()
+			close(done)
+		}()
+		select {
+		case <-done:
+			// Ok
+		case <-time.After(Timeout):
+			t.Fatalf("Time out after: %s", Timeout)
+		}
+	})
+
+	t.Run("Many", func(t *testing.T) {
+		cbs := make([]chan int, 10)
+		for i := range cbs {
+			cbs[i] = make(chan int, 1)
+			ll.AddUpdateCallback(cbs[i])
+		}
+		go ll.onRuntimeChanged()
+
+		for _, cb := range cbs {
+			select {
+			case i := <-cb:
+				if i != 1 {
+					t.Errorf("Callback: got: %d want: %d", i, 1)
+				}
+			case <-time.After(Timeout):
+				t.Fatalf("Time out after: %s", Timeout)
+			}
+		}
+	})
+
+	t.Run("ManyDelayed", func(t *testing.T) {
+		total := new(int64)
+		wg := new(sync.WaitGroup)
+		ready := make(chan struct{})
+
+		cbs := make([]chan int, 10)
+
+		for i := range cbs {
+			cbs[i] = make(chan int) // blocking
+			ll.AddUpdateCallback(cbs[i])
+			wg.Add(1)
+			go func(cb chan int) {
+				defer wg.Done()
+				<-ready
+				atomic.AddInt64(total, int64(<-cb))
+			}(cbs[i])
+		}
+
+		done := make(chan struct{})
+		go func() {
+			ll.onRuntimeChanged()
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			// Ok
+		case <-time.After(Timeout):
+			t.Fatalf("Time out after: %s", Timeout)
+		}
+		if n := atomic.LoadInt64(total); n != 0 {
+			t.Errorf("Expected %d channels to be signaled got: %d", 0, n)
+		}
+		close(ready)
+		wg.Wait()
+
+		if n := atomic.LoadInt64(total); n != 10 {
+			t.Errorf("Expected %d channels to be signaled got: %d", 10, n)
+		}
+	})
+
+	t.Run("ManyBlocking", func(t *testing.T) {
+		cbs := make([]chan int, 10)
+		for i := range cbs {
+			cbs[i] = make(chan int)
+			ll.AddUpdateCallback(cbs[i])
+		}
+		done := make(chan struct{})
+		go func() {
+			ll.onRuntimeChanged()
+			close(done)
+		}()
+		select {
+		case <-done:
+			// Ok
+		case <-time.After(Timeout):
+			t.Fatalf("Time out after: %s", Timeout)
+		}
+	})
 }
 
 func BenchmarkSnapshot(b *testing.B) {
