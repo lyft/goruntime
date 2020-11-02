@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lyft/goruntime/snapshot/entry"
+	infra "github.com/lyft/idlcode-go/pb/lyft/infra"
 )
 
 func min(lhs uint64, rhs uint64) uint64 {
@@ -71,8 +72,11 @@ func (s *Snapshot) FeatureEnabledForID(key string, id uint64, defaultPercentage 
 }
 
 func (s *Snapshot) Get(key string) string {
+	keyText := checkBaggageForOverride(key)
 	e, ok := s.entries[key]
-	if ok {
+	if keyText != "" {
+		return keyText
+	} else if ok {
 		return e.StringValue
 	} else {
 		return ""
@@ -126,4 +130,21 @@ func crc(id uint64, feature string) uint32 {
 	b = append(b, []byte(feature)...)
 
 	return crc32.ChecksumIEEE(b)
+}
+
+func checkBaggageForOverride(key string) string {
+	// getRequestContext pending on https://github.com/lyft/go-lyft-configset/pull/230
+	requestContext := &infra.RequestContext{}
+
+	if requestContext == nil {
+		return ""
+	}
+
+	for _, runtimeOverride := range requestContext.RuntimeOverrides {
+		if runtimeOverride.Key == key {
+			return string(runtimeOverride.Value)
+		}
+	}
+
+	return ""
 }
