@@ -4,11 +4,12 @@ import (
 	"encoding/binary"
 	"hash/crc32"
 	"math/rand"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/lyft/goruntime/snapshot/entry"
-	infra "github.com/lyft/idlcode-go/pb/lyft/infra"
+	"github.com/lyft/idlcode-go/pb/lyft/infra"
 )
 
 func min(lhs uint64, rhs uint64) uint64 {
@@ -72,10 +73,10 @@ func (s *Snapshot) FeatureEnabledForID(key string, id uint64, defaultPercentage 
 }
 
 func (s *Snapshot) Get(key string) string {
-	keyText := checkBaggageForOverride(key)
+	overrideVal := checkBaggageForOverride(key)
 	e, ok := s.entries[key]
-	if keyText != "" {
-		return keyText
+	if overrideVal != "" {
+		return overrideVal
 	} else if ok {
 		return e.StringValue
 	} else {
@@ -84,8 +85,16 @@ func (s *Snapshot) Get(key string) string {
 }
 
 func (s *Snapshot) GetInteger(key string, defaultValue uint64) uint64 {
+	overrideVal := checkBaggageForOverride(key)
 	e, ok := s.entries[key]
-	if ok && e.Uint64Valid {
+	if overrideVal != "" {
+		overrideValInt, err := strconv.ParseUint(overrideVal, 10, 64)
+		if err != nil {
+			return defaultValue
+		} else {
+			return overrideValInt
+		}
+	} else if ok && e.Uint64Valid {
 		return e.Uint64Value
 	} else {
 		return defaultValue
