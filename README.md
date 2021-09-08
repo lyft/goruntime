@@ -27,12 +27,6 @@ Goruntime is a Go client for Runtime application level feature flags and configu
 go get github.com/lyft/goruntime
 ```
 
-## Building
-
-```
-make bootstrap && make tests
-```
-
 ## Usage
 
 In order to start using goruntime, import it to your project with:
