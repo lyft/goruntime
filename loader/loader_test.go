@@ -334,6 +334,32 @@ func TestOnRuntimeChanged(t *testing.T) {
 	})
 }
 
+func TestShouldRefreshDefault(t *testing.T) {
+	assert := require.New(t)
+
+	refresher := DirectoryRefresher{currDir: "/tmp"}
+
+	assert.True(refresher.ShouldRefresh("/tmp/foo", Write))
+
+	assert.False(refresher.ShouldRefresh("/tmp/foo", Remove))
+	assert.False(refresher.ShouldRefresh("/bar/foo", Write))
+	assert.False(refresher.ShouldRefresh("/bar/foo", Remove))
+}
+
+func TestShouldRefreshRemove(t *testing.T) {
+	assert := require.New(t)
+
+	refresher := DirectoryRefresher{currDir: "/tmp", watchOps: map[FileSystemOp]struct{}{
+		Remove: {},
+		Chmod:  {},
+	}}
+
+	assert.True(refresher.ShouldRefresh("/tmp/foo", Remove))
+	assert.True(refresher.ShouldRefresh("/tmp/foo", Chmod))
+
+	assert.False(refresher.ShouldRefresh("/bar/foo", Write))
+}
+
 func BenchmarkSnapshot(b *testing.B) {
 	var ll Loader
 	for i := 0; i < b.N; i++ {
