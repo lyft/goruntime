@@ -360,6 +360,21 @@ func TestShouldRefreshRemove(t *testing.T) {
 	assert.False(refresher.ShouldRefresh("/bar/foo", Write))
 }
 
+func TestWatchFileSystemOps(t *testing.T) {
+	assert := require.New(t)
+
+	refresher := DirectoryRefresher{currDir: "/tmp"}
+
+	assert.Equal(refresher.WatchFileSystemOps(), map[FileSystemOp]struct{}{})
+	assert.False(refresher.ShouldRefresh("/tmp/foo", Write))
+
+	assert.Equal(refresher.WatchFileSystemOps(Remove), map[FileSystemOp]struct{}{Remove: {}})
+	assert.True(refresher.ShouldRefresh("/tmp/foo", Remove))
+
+	assert.Equal(refresher.WatchFileSystemOps(Chmod, Write), map[FileSystemOp]struct{}{Chmod: {}, Write: {}})
+	assert.True(refresher.ShouldRefresh("/tmp/foo", Write))
+}
+
 func BenchmarkSnapshot(b *testing.B) {
 	var ll Loader
 	for i := 0; i < b.N; i++ {

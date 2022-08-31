@@ -18,16 +18,25 @@ func (d *DirectoryRefresher) WatchDirectory(runtimePath string, appDirPath strin
 	return d.currDir
 }
 
-func (d *DirectoryRefresher) ShouldRefresh(path string, op FileSystemOp) bool {
-	var watchOps *map[FileSystemOp]struct{}
-
-	if d.watchOps == nil {
-		watchOps = &defaultFileSystemOps
-	} else {
-		watchOps = &d.watchOps
+func (d *DirectoryRefresher) WatchFileSystemOps(fsops ...FileSystemOp) map[FileSystemOp]struct{} {
+	d.watchOps = map[FileSystemOp]struct{}{}
+	for _, op := range fsops {
+		d.watchOps[op] = struct{}{}
 	}
 
-	if _, opMatches := (*watchOps)[op]; opMatches && filepath.Dir(path) == d.currDir {
+	return d.watchOps
+}
+
+func (d *DirectoryRefresher) ShouldRefresh(path string, op FileSystemOp) bool {
+	var watchOps map[FileSystemOp]struct{}
+
+	if d.watchOps == nil {
+		watchOps = defaultFileSystemOps
+	} else {
+		watchOps = d.watchOps
+	}
+
+	if _, opMatches := watchOps[op]; opMatches && filepath.Dir(path) == d.currDir {
 		return true
 	}
 	return false
