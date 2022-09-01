@@ -4,13 +4,13 @@ import "path/filepath"
 
 type DirectoryRefresher struct {
 	currDir  string
-	watchOps map[FileSystemOp]struct{}
+	watchOps map[FileSystemOp]bool
 }
 
-var defaultFileSystemOps = map[FileSystemOp]struct{}{
-	Write:  {},
-	Create: {},
-	Chmod:  {},
+var defaultFileSystemOps = map[FileSystemOp]bool{
+	Write:  true,
+	Create: true,
+	Chmod:  true,
 }
 
 func (d *DirectoryRefresher) WatchDirectory(runtimePath string, appDirPath string) string {
@@ -18,26 +18,17 @@ func (d *DirectoryRefresher) WatchDirectory(runtimePath string, appDirPath strin
 	return d.currDir
 }
 
-func (d *DirectoryRefresher) WatchFileSystemOps(fsops ...FileSystemOp) map[FileSystemOp]struct{} {
-	d.watchOps = map[FileSystemOp]struct{}{}
+func (d *DirectoryRefresher) WatchFileSystemOps(fsops ...FileSystemOp) {
+	d.watchOps = map[FileSystemOp]bool{}
 	for _, op := range fsops {
-		d.watchOps[op] = struct{}{}
+		d.watchOps[op] = true
 	}
-
-	return d.watchOps
 }
 
 func (d *DirectoryRefresher) ShouldRefresh(path string, op FileSystemOp) bool {
-	var watchOps map[FileSystemOp]struct{}
-
-	if d.watchOps == nil {
+	watchOps := d.watchOps
+	if watchOps == nil {
 		watchOps = defaultFileSystemOps
-	} else {
-		watchOps = d.watchOps
 	}
-
-	if _, opMatches := watchOps[op]; opMatches && filepath.Dir(path) == d.currDir {
-		return true
-	}
-	return false
+	return filepath.Dir(path) == d.currDir && watchOps[op]
 }

@@ -349,9 +349,9 @@ func TestShouldRefreshDefault(t *testing.T) {
 func TestShouldRefreshRemove(t *testing.T) {
 	assert := require.New(t)
 
-	refresher := DirectoryRefresher{currDir: "/tmp", watchOps: map[FileSystemOp]struct{}{
-		Remove: {},
-		Chmod:  {},
+	refresher := DirectoryRefresher{currDir: "/tmp", watchOps: map[FileSystemOp]bool{
+		Remove: true,
+		Chmod:  true,
 	}}
 
 	assert.True(refresher.ShouldRefresh("/tmp/foo", Remove))
@@ -365,13 +365,13 @@ func TestWatchFileSystemOps(t *testing.T) {
 
 	refresher := DirectoryRefresher{currDir: "/tmp"}
 
-	assert.Equal(refresher.WatchFileSystemOps(), map[FileSystemOp]struct{}{})
+	refresher.WatchFileSystemOps()
 	assert.False(refresher.ShouldRefresh("/tmp/foo", Write))
 
-	assert.Equal(refresher.WatchFileSystemOps(Remove), map[FileSystemOp]struct{}{Remove: {}})
+	refresher.WatchFileSystemOps(Remove)
 	assert.True(refresher.ShouldRefresh("/tmp/foo", Remove))
 
-	assert.Equal(refresher.WatchFileSystemOps(Chmod, Write), map[FileSystemOp]struct{}{Chmod: {}, Write: {}})
+	refresher.WatchFileSystemOps(Chmod, Write)
 	assert.True(refresher.ShouldRefresh("/tmp/foo", Write))
 }
 
