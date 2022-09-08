@@ -3,7 +3,14 @@ package loader
 import "path/filepath"
 
 type DirectoryRefresher struct {
-	currDir string
+	currDir  string
+	watchOps map[FileSystemOp]bool
+}
+
+var defaultFileSystemOps = map[FileSystemOp]bool{
+	Write:  true,
+	Create: true,
+	Chmod:  true,
 }
 
 func (d *DirectoryRefresher) WatchDirectory(runtimePath string, appDirPath string) string {
@@ -11,10 +18,17 @@ func (d *DirectoryRefresher) WatchDirectory(runtimePath string, appDirPath strin
 	return d.currDir
 }
 
-func (d *DirectoryRefresher) ShouldRefresh(path string, op FileSystemOp) bool {
-	if filepath.Dir(path) == d.currDir &&
-		(op == Write || op == Create || op == Chmod) {
-		return true
+func (d *DirectoryRefresher) WatchFileSystemOps(fsops ...FileSystemOp) {
+	d.watchOps = map[FileSystemOp]bool{}
+	for _, op := range fsops {
+		d.watchOps[op] = true
 	}
-	return false
+}
+
+func (d *DirectoryRefresher) ShouldRefresh(path string, op FileSystemOp) bool {
+	watchOps := d.watchOps
+	if watchOps == nil {
+		watchOps = defaultFileSystemOps
+	}
+	return filepath.Dir(path) == d.currDir && watchOps[op]
 }
